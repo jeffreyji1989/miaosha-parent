@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: miaosha-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://121.36.80.21:3306/miaosha?useUnicode=true&useSSL=false&characterEncoding=utf8&serverTimeZone=Asia/Shanghai
+    username: root
+    password: root
+  redis:
+    host: 121.36.80.21
+    username:
+    password:
+    port: 6379
+    timeout: 30000
+server:
+  port: 8089
+logging:
+  level:
+    root: info

@@ -1,0 +1,8 @@
+# 配置服务名字
+spring:
+  profiles:
+    active: dev
+  application:
+    name: gateway-service
+server:
+  port: 6696

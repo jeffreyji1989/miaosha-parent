@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>ms-services</artifactId>
+        <groupId>com.nuwa.miaosha</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>ms-service</artifactId>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.nuwa.miaosha</groupId>
+            <artifactId>ms-interface</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nuwa.miaosha</groupId>
+            <artifactId>common-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nuwa.miaosha</groupId>
+            <artifactId>common-db</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nuwa.miaosha</groupId>
+            <artifactId>common-cache</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!--        如果不用spring.config.import(可以用application.yml) 这种方式 需要打开下面的坐标bootstrap.yml-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.cloud</groupId>-->
+        <!--            <artifactId>spring-cloud-starter-bootstrap</artifactId>-->
+        <!--        </dependency>-->
+
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.nuwa.miaosha.ms.MsApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

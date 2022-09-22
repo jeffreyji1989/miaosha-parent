@@ -1,0 +1,9 @@
+# 配置服务名字
+spring:
+  profiles:
+    active: dev
+  application:
+    name: user-service
+server:
+  port: 8080
+

@@ -1,0 +1,15 @@
+# Project exclude paths
+/ms-api/target/
+/ms-commons/common-cache/target/
+/ms-commons/common-db/target/
+/ms-commons/common-util/target/
+/ms-commons/common-web/target/
+/ms-gateway/target/
+/ms-services/good-interface/target/
+/ms-services/good-service/target/
+/ms-services/ms-interface/target/
+/ms-services/ms-service/target/
+/ms-services/order-interface/target/
+/ms-services/order-service/target/
+/ms-services/user-interface/target/
+/ms-services/user-service/target/

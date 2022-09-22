@@ -1,0 +1,15 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        namespace: 5ec5142a-5100-445d-8ac9-bf38ec7388e0
+        server-addr: 192.168.0.113:8848
+      config:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+  config:
+    import:
+      - optional:nacos:ms-service-dev.yml?group=MS&refreshEnabled=true
+#      - optional:nacos:sentinel.properties?group=common&refreshEnabled=true
+      - optional:nacos:db-ms-dev.yml?group=COMMON&refreshEnabled=false
+      - optional:nacos:cache-dev.yml?group=COMMON&refreshEnabled=false

@@ -1,0 +1,8 @@
+# 配置服务名字
+spring:
+  profiles:
+    active: dev
+  application:
+    name: ms-service
+server:
+  port: 8085
