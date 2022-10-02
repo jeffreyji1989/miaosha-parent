@@ -24,6 +24,16 @@
 
         <dependency>
             <groupId>com.nuwa.miaosha</groupId>
+            <artifactId>good-interface</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nuwa.miaosha</groupId>
+            <artifactId>order-interface</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nuwa.miaosha</groupId>
             <artifactId>common-web</artifactId>
         </dependency>
 

@@ -1,4 +1,4 @@
-package com.nuwa.miaosha.common.web.bean;
+package com.nuwa.miaosha.common.util.rpc;
 
 import com.nuwa.miaosha.common.util.enums.ErrorCodeEnum;
 import com.nuwa.miaosha.common.util.execution.CommonException;
@@ -81,11 +81,11 @@ public class GlobalResponse<T> implements Serializable {
         return new GlobalResponse();
     }
 
-//    public void check() {
-//        if (!ErrorCodeEnum.SUCCESS.getCode().equals(this.code)) {
-//            throw new CommonException(this);
-//        }
-//    }
+    public void check() {
+        if (!ErrorCodeEnum.SUCCESS.getCode().equals(this.code)) {
+            throw new CommonException(this.getCode(), this.getMessage());
+        }
+    }
 //
 //    public void checkDataEmpty(ErrorCodeEnum errorCodeEnum) {
 //        check();

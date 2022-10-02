@@ -2,7 +2,7 @@ package com.nuwa.miaosha.common.web.advice;
 
 import com.alibaba.fastjson.JSON;
 import com.nuwa.miaosha.common.util.constant.CommonConstants;
-import com.nuwa.miaosha.common.web.bean.GlobalResponse;
+import com.nuwa.miaosha.common.util.rpc.GlobalResponse;
 import com.nuwa.miaosha.common.web.util.SpringContextUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.apm.toolkit.trace.TraceContext;

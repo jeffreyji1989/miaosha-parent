@@ -3,7 +3,7 @@ package com.nuwa.miaosha.common.web.advice;
 import com.nuwa.miaosha.common.util.enums.ErrorCodeEnum;
 import com.nuwa.miaosha.common.util.execution.CommonException;
 import com.nuwa.miaosha.common.util.execution.ServiceException;
-import com.nuwa.miaosha.common.web.bean.GlobalResponse;
+import com.nuwa.miaosha.common.util.rpc.GlobalResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.HttpRequestMethodNotSupportedException;

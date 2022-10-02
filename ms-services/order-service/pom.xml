@@ -24,6 +24,11 @@
 
         <dependency>
             <groupId>com.nuwa.miaosha</groupId>
+            <artifactId>good-interface</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nuwa.miaosha</groupId>
             <artifactId>common-web</artifactId>
         </dependency>
 
@@ -48,7 +53,6 @@
         <!--            <groupId>org.springframework.cloud</groupId>-->
         <!--            <artifactId>spring-cloud-starter-bootstrap</artifactId>-->
         <!--        </dependency>-->
-
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>

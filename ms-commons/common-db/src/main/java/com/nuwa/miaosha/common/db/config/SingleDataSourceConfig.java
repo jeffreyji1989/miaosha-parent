@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  */
 @Configuration
 @EnableTransactionManagement
-@MapperScan("com.nuwa.*.**.dao")
+@MapperScan("com.nuwa.*.**.mapper")
 public class SingleDataSourceConfig {
 
     /**

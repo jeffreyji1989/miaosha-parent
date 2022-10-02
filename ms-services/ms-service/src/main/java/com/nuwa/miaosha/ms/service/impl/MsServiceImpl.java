@@ -1,15 +1,28 @@
 package com.nuwa.miaosha.ms.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nuwa.miaosha.common.util.execution.ServiceException;
+import com.nuwa.miaosha.common.util.rpc.GlobalResponse;
+import com.nuwa.miaosha.common.web.bean.LoginUser;
+import com.nuwa.miaosha.common.web.context.UserContext;
+import com.nuwa.miaosha.ms.cache.MsCache;
 import com.nuwa.miaosha.ms.entity.Ms;
+import com.nuwa.miaosha.ms.entity.MsRecord;
 import com.nuwa.miaosha.ms.entity.Subject;
 import com.nuwa.miaosha.ms.mapper.MsMapper;
+import com.nuwa.miaosha.ms.service.IMsRecordService;
 import com.nuwa.miaosha.ms.service.IMsService;
 import com.nuwa.miaosha.ms.service.ISubjectService;
+import com.nuwa.miaosha.order.facade.OrderFacadeService;
+import com.nuwa.miaosha.order.req.OrderCreateReq;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,10 +36,17 @@ import java.util.List;
  * @since 2022-09-05
  */
 @Service
+@Slf4j
 public class MsServiceImpl extends ServiceImpl<MsMapper, Ms> implements IMsService {
 
     @Autowired
     private ISubjectService subjectService;
+    @Autowired
+    private IMsRecordService msRecordService;
+    @Autowired
+    private OrderFacadeService orderFacadeService;
+    @Autowired
+    private MsCache msCache;
 
     /**
      * 根据主题id查询秒杀商品列表
@@ -36,7 +56,21 @@ public class MsServiceImpl extends ServiceImpl<MsMapper, Ms> implements IMsServi
      */
     @Override
     public List<Ms> listBySubjectId(Long subjectId) {
-        return list(new LambdaQueryWrapper<>(Ms.class).eq(Ms::getSubjectId,subjectId).eq(Ms::getStatus,0));
+        return list(new LambdaQueryWrapper<>(Ms.class).eq(Ms::getSubjectId, subjectId).eq(Ms::getStatus, 0));
+    }
+
+    /**
+     * 根据id获取秒杀信息
+     * @param msId
+     * @return
+     */
+    public Ms getCacheById(Long msId){
+        Ms ms = msCache.getMs(msId);
+        if (null == ms) {
+            ms = getById(msId);
+            msCache.saveMs(ms);
+        }
+        return ms;
     }
 
     /**
@@ -51,19 +85,64 @@ public class MsServiceImpl extends ServiceImpl<MsMapper, Ms> implements IMsServi
      *
      * @param id
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void msKill(Long id) {
+        LoginUser user = UserContext.getUser();
+        log.info("当前登录用户:{}", user);
+        // 秒杀数量
+        int goodCount = 1;
         // 查询秒杀信息
-        Ms ms = getById(id);
+        Ms ms = getCacheById(id);
         // 校验秒杀信息
         validateMs(ms);
         // 查询活动信息
-        Subject subject = subjectService.getById(ms.getSubjectId());
+        Subject subject = subjectService.getCacheById(ms.getSubjectId());
         // 校验活动信息
         validateSubject(subject);
+        // 预先扣减库存
+        long stock = msCache.reduceStock(ms.getGoodId());
+        if (stock < 0){
+            throw new ServiceException("库存不足!");
+        }
 
-        // 查询订单信息
-        String userId = "";
+        LambdaQueryWrapper<Ms> queryWrapper = Wrappers.lambdaQuery(Ms.class);
+        queryWrapper.eq(Ms::getId,id).ge(Ms::getStock,goodCount);
+        queryWrapper.last("for update");
+        Ms one = getOne(queryWrapper);
+        // 扣减库存
+        one.setStock(one.getStock() - 1);
+//        ;
+//        LambdaUpdateWrapper<Ms> updateWrapper = Wrappers.lambdaUpdate(Ms.class);
+//        // 更新
+//        updateWrapper.set(stock > goodCount, Ms::getStock, stock - goodCount)
+//                .eq(Ms::getId, id)
+//                .ge(Ms::getStock, goodCount);
+        if (updateById(one)) {
+            log.info("商品：{}扣减库存：{}成功，剩余库存{}！", ms.getGoodName(), goodCount, one.getStock());
+        } else {
+            log.warn("商品：{}扣减库存：{}失败,剩余库存{}！", ms.getGoodName(), goodCount, one.getStock());
+        }
+
+        // 生成订单记录
+        OrderCreateReq req = new OrderCreateReq();
+        req.setGoodId(ms.getGoodId());
+        req.setGoodCount(goodCount);
+        req.setSubjectId(ms.getSubjectId());
+        req.setGoodPrice(ms.getPrice());
+        GlobalResponse orderResult = orderFacadeService.createOrder(req);
+        orderResult.check();
+        log.info("用户:{},下单成功：{}", user.getNickName(), req);
+
+        // 生成秒杀记录
+        MsRecord msRecord = new MsRecord();
+        msRecord.setGoodCount(goodCount);
+        BeanUtils.copyProperties(ms, msRecord);
+        msRecord.setCreateTime(LocalDateTime.now());
+        msRecord.setUserId(user.getId());
+        msRecordService.save(msRecord);
+        log.info("秒杀记录保存成功:{}", msRecord);
+
 
     }
 
@@ -97,7 +176,7 @@ public class MsServiceImpl extends ServiceImpl<MsMapper, Ms> implements IMsServi
         if (msOne.getStatus() > 0) {
             throw new ServiceException("活动已经失效");
         }
-        if (msOne.getStatus() <=0){
+        if (msOne.getStock() <= 0) {
             throw new ServiceException("库存不足");
         }
     }
