@@ -14,9 +14,11 @@ public class OrderCreateReq implements Serializable {
     private Long subjectId ;
     @NotNull(message = "商品不能为空")
     private Long goodId;
+    private String goodName;
     @Range(min = 1,max = 100,message = "商品数量不在范围内")
     private Integer goodCount;
     @DecimalMin(value = "0.01",message = "商品价格有误")
     private BigDecimal goodPrice;
+    private Long userId;
 
 }

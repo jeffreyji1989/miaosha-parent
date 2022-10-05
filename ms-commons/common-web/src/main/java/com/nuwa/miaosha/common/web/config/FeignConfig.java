@@ -20,6 +20,9 @@ public class FeignConfig implements RequestInterceptor {
     public void apply(RequestTemplate requestTemplate) {
         // 从header获取X-token
         RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (null == requestAttributes){
+            return;
+        }
         ServletRequestAttributes srat = (ServletRequestAttributes) requestAttributes;
         HttpServletRequest request = srat.getRequest();
         String token = request.getHeader(JwtTokenUtils.TOKEN_HEADER);

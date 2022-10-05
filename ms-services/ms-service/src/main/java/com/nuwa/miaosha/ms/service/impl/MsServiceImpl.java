@@ -1,7 +1,6 @@
 package com.nuwa.miaosha.ms.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nuwa.miaosha.common.util.execution.ServiceException;
@@ -13,6 +12,7 @@ import com.nuwa.miaosha.ms.entity.Ms;
 import com.nuwa.miaosha.ms.entity.MsRecord;
 import com.nuwa.miaosha.ms.entity.Subject;
 import com.nuwa.miaosha.ms.mapper.MsMapper;
+import com.nuwa.miaosha.ms.producer.KafkaProducer;
 import com.nuwa.miaosha.ms.service.IMsRecordService;
 import com.nuwa.miaosha.ms.service.IMsService;
 import com.nuwa.miaosha.ms.service.ISubjectService;
@@ -47,6 +47,8 @@ public class MsServiceImpl extends ServiceImpl<MsMapper, Ms> implements IMsServi
     private OrderFacadeService orderFacadeService;
     @Autowired
     private MsCache msCache;
+    @Autowired
+    private KafkaProducer kafkaProducer;
 
     /**
      * 根据主题id查询秒杀商品列表
@@ -61,10 +63,11 @@ public class MsServiceImpl extends ServiceImpl<MsMapper, Ms> implements IMsServi
 
     /**
      * 根据id获取秒杀信息
+     *
      * @param msId
      * @return
      */
-    public Ms getCacheById(Long msId){
+    public Ms getCacheById(Long msId) {
         Ms ms = msCache.getMs(msId);
         if (null == ms) {
             ms = getById(msId);
@@ -102,47 +105,55 @@ public class MsServiceImpl extends ServiceImpl<MsMapper, Ms> implements IMsServi
         validateSubject(subject);
         // 预先扣减库存
         long stock = msCache.reduceStock(ms.getGoodId());
-        if (stock < 0){
+        if (stock < 0) {
             throw new ServiceException("库存不足!");
         }
 
-        LambdaQueryWrapper<Ms> queryWrapper = Wrappers.lambdaQuery(Ms.class);
-        queryWrapper.eq(Ms::getId,id).ge(Ms::getStock,goodCount);
-        queryWrapper.last("for update");
-        Ms one = getOne(queryWrapper);
-        // 扣减库存
-        one.setStock(one.getStock() - 1);
+        try {
+            LambdaQueryWrapper<Ms> queryWrapper = Wrappers.lambdaQuery(Ms.class);
+            queryWrapper.eq(Ms::getId, id).ge(Ms::getStock, goodCount);
+            queryWrapper.last("for update");
+            Ms one = getOne(queryWrapper);
+            // 扣减库存
+            one.setStock(one.getStock() - 1);
 //        ;
 //        LambdaUpdateWrapper<Ms> updateWrapper = Wrappers.lambdaUpdate(Ms.class);
 //        // 更新
 //        updateWrapper.set(stock > goodCount, Ms::getStock, stock - goodCount)
 //                .eq(Ms::getId, id)
 //                .ge(Ms::getStock, goodCount);
-        if (updateById(one)) {
-            log.info("商品：{}扣减库存：{}成功，剩余库存{}！", ms.getGoodName(), goodCount, one.getStock());
-        } else {
-            log.warn("商品：{}扣减库存：{}失败,剩余库存{}！", ms.getGoodName(), goodCount, one.getStock());
+            if (updateById(one)) {
+                log.info("商品：{}扣减库存：{}成功，剩余库存{}！", ms.getGoodName(), goodCount, one.getStock());
+            } else {
+                log.warn("商品：{}扣减库存：{}失败,剩余库存{}！", ms.getGoodName(), goodCount, one.getStock());
+            }
+
+            // 生成秒杀记录
+            MsRecord msRecord = new MsRecord();
+            msRecord.setGoodCount(goodCount);
+            BeanUtils.copyProperties(ms, msRecord);
+            msRecord.setCreateTime(LocalDateTime.now());
+            msRecord.setUserId(user.getId());
+            msRecordService.save(msRecord);
+
+            // 生成订单记录
+            OrderCreateReq req = new OrderCreateReq();
+            req.setGoodId(ms.getGoodId());
+            req.setGoodCount(goodCount);
+            req.setSubjectId(ms.getSubjectId());
+            req.setGoodPrice(ms.getPrice());
+            req.setGoodName(ms.getGoodName());
+            req.setUserId(user.getId());
+            GlobalResponse orderResult = orderFacadeService.createOrder(req);
+            orderResult.check();
+            log.info("用户:{},下单成功：{}", user.getNickName(), req);
+            // 发送下单消息
+            kafkaProducer.sendCreateOrderMsg(req);
+            log.info("秒杀记录保存成功:{}", msRecord);
+        } catch (Exception e) {
+            log.error("秒杀出现异常:{},user:{},ms:{}", e.getMessage(), user, ms);
+            msCache.addStock(ms.getGoodId());
         }
-
-        // 生成订单记录
-        OrderCreateReq req = new OrderCreateReq();
-        req.setGoodId(ms.getGoodId());
-        req.setGoodCount(goodCount);
-        req.setSubjectId(ms.getSubjectId());
-        req.setGoodPrice(ms.getPrice());
-        GlobalResponse orderResult = orderFacadeService.createOrder(req);
-        orderResult.check();
-        log.info("用户:{},下单成功：{}", user.getNickName(), req);
-
-        // 生成秒杀记录
-        MsRecord msRecord = new MsRecord();
-        msRecord.setGoodCount(goodCount);
-        BeanUtils.copyProperties(ms, msRecord);
-        msRecord.setCreateTime(LocalDateTime.now());
-        msRecord.setUserId(user.getId());
-        msRecordService.save(msRecord);
-        log.info("秒杀记录保存成功:{}", msRecord);
-
 
     }
 

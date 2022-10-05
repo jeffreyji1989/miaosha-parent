@@ -104,4 +104,10 @@ public interface CommonConstants {
      * 日志打印长度
      */
     Integer LOG_LENGTH = 4096;
+    /**
+     * 创建订单topic
+     */
+    String MQ_TOPIC_CREATE_ORDER="CREATE_ORDER_TOPIC";
+
+    String MQ_GROUP_ID="miaosha";
 }

@@ -42,23 +42,22 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
      */
     @Override
     public void createOrder(OrderCreateReq req) {
-        LoginUser user = UserContext.getUser();
-        // 商品详情
-        GlobalResponse<GoodDetailResp> goodDetailResult = goodFacadeService.getById(req.getGoodId());
-        goodDetailResult.check();
-        GoodDetailResp goodDetailResp = goodDetailResult.getData();
-        // 请求价格 大于 实际价格
-        if (req.getGoodPrice().compareTo(goodDetailResp.getPrice()) == 1) {
-            throw new ServiceException("价格异常");
-        }
+//        LoginUser user = UserContext.getUser();
+//        // 商品详情
+//        GlobalResponse<GoodDetailResp> goodDetailResult = goodFacadeService.getById(req.getGoodId());
+//        goodDetailResult.check();
+//        GoodDetailResp goodDetailResp = goodDetailResult.getData();
+//        // 请求价格 大于 实际价格
+//        if (req.getGoodPrice().compareTo(goodDetailResp.getPrice()) == 1) {
+//            throw new ServiceException("价格异常");
+//        }
         // 生成订单
         Order order = new Order();
         BeanUtils.copyProperties(req,order);
         order.setCreateTime(LocalDateTime.now());
-        order.setGoodName(goodDetailResp.getName());
-        order.setUserId(user.getId());
+        order.setUserId(req.getUserId());
         order.setStatus(0);
         save(order);
-        log.info("用户:{}，下单商品:{}，下单数量:{}成功！",user.getId(),goodDetailResp.getName(),req.getGoodCount());
+        log.info("用户:{}，下单商品:{}，下单数量:{}成功！",req.getUserId(),order.getGoodName(),req.getGoodCount());
     }
 }
